@@ -1,0 +1,43 @@
+import redis
+from pathlib import Path
+
+class RedisLuaClient:
+    def __init__(self, redis_host: str, redis_port: int):
+        self.redis_host = redis_host
+        self.redis_port = redis_port
+        self.client = redis.Redis(
+            host=self.redis_host,
+            port=self.redis_port,
+            decode_responses=True,
+        )
+        self.script_sha = None
+
+    def load_script(self):
+        lua_path = Path(__file__).parent / "lua" / "token_bucket.lua"
+        script = lua_path.read_text()
+        self.script_sha = self.client.script_load(script)
+
+    def token_bucket(self, key, capacity, refill_rate, now):
+        if not self.script_sha:
+            self.load_script()
+
+        try:
+            return self.client.evalsha(
+                self.script_sha,
+                1,
+                key,
+                capacity,
+                refill_rate,
+                now
+            )
+        except redis.exceptions.NoScriptError:
+            # Redis restart or script cache lost
+            self.load_script()
+            return self.client.evalsha(
+                self.script_sha,
+                1,
+                key,
+                capacity,
+                refill_rate,
+                now
+            )
