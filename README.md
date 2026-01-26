@@ -4,11 +4,11 @@
 1-tokens    (1/rate)*(1-tokens) -->
 
 <!-- 1 type casting of lua scripts -->
-
-handle request missing exception
-handle abstracting redis and scripts
-how weighted cost can be better approach from client usage perspective
-handle slots when clusters are there
+Todo:
+1. handle request missing exception
+2. handle abstracting redis and scripts
+3. how weighted cost can be better approach from client usage perspective
+4. handle slots when clusters are there
 
 
 When this is not enough
