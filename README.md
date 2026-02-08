@@ -45,11 +45,11 @@ Ensure your endpoint receives a `Request` (so the decorator can read IP and path
 
 ```python
 from fastapi import FastAPI, Request
-from rate_limiter.core.rate_limiter import RateLimiter
+from rate_limiter.factory import rate_limiter
 from rate_limiter.adapters.fastapi import rate_limit
 
 app = FastAPI()
-rate_limiter = RateLimiter(redis_host="localhost", redis_port=6379, prefix="rl")
+rate_limiter = rate_limiter(host="localhost", port=6379, prefix="rl")
 
 @app.get("/search")
 @rate_limit(rate_limiter, capacity=5, per_seconds=60)
