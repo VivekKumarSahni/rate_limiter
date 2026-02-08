@@ -1,34 +1,34 @@
-import time
-from rate_limiter.clients.redis_client import RedisLuaClient
+from rate_limiter.core.backend import RateLimitBackend, KeyBuilder, Clock
+
 
 class RateLimiter:
+    """Core rate limiter. Depends on Backend, KeyBuilder, Clock (small interfaces)."""
+
     def __init__(
         self,
-        redis_host: str,
-        redis_port: int,
-        prefix: str = "rl",
-        ):
-        self.redis = RedisLuaClient(redis_host=redis_host,redis_port=redis_port)
-        self.prefix = prefix
+        backend: RateLimitBackend,
+        key_builder: KeyBuilder,
+        clock: Clock,
+    ):
+        self._backend = backend
+        self._key_builder = key_builder
+        self._clock = clock
 
-    def build_key(self, ip: str, route: str):
-        return f"{self.prefix}:{ip}:{route}"
-
-    def allow(self, ip: str, route: str, capacity: int, per_seconds: int):
-        key = self.build_key(ip, route)
+    def allow(self, ip: str, route: str, capacity: int, per_seconds: int) -> dict:
+        key = self._key_builder.build_key(ip=ip, route=route)
         refill_rate = capacity / per_seconds
-        now = int(time.time())
+        now = self._clock.now()
 
-        allowed, remaining, retry_after = self.redis.token_bucket(
+        allowed, remaining, retry_after = self._backend.check(
             key=key,
             capacity=capacity,
             refill_rate=refill_rate,
-            now=now
+            now=now,
         )
         return {
             "allowed": bool(allowed),
             "remaining": remaining,
-            "retry_after": retry_after if retry_after != 0 else None
+            "retry_after": retry_after if retry_after != 0 else None,
         }
 
         
